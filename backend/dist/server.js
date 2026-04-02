@@ -46,58 +46,62 @@ function isOpenInQ3(deal) {
     const month = parseInt(deal.created_date.substring(5, 7));
     return year === '2025' && month >= 7 && month <= 9;
 }
-app.get('/api/metrics', (req, res) => {
-    let totalWon = 0;
-    let totalLost = 0;
-    let totalDealValue = 0;
+function getBaseMetrics() {
+    let wonCount = 0;
+    let lostCount = 0;
+    let totalValue = 0;
     let totalCycleDays = 0;
     let cycleCount = 0;
     for (let i = 0; i < allDeals.length; i++) {
         const deal = allDeals[i];
         if (isClosedInQ1OrQ2(deal)) {
             if (deal.stage === 'Closed Won') {
-                totalWon = totalWon + 1;
-                totalDealValue = totalDealValue + deal.deal_value;
+                wonCount++;
+                totalValue += deal.deal_value;
                 const created = new Date(deal.created_date);
                 const closed = new Date(deal.closed_date);
                 const days = Math.floor((closed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-                totalCycleDays = totalCycleDays + (days > 0 ? days : 1);
-                cycleCount = cycleCount + 1;
+                totalCycleDays += (days > 0 ? days : 1);
+                cycleCount++;
             }
             else if (deal.stage === 'Closed Lost') {
-                totalLost = totalLost + 1;
+                lostCount++;
             }
         }
     }
-    const conversionRate = totalLost + totalWon > 0 ? totalWon / (totalWon + totalLost) : 0.5;
-    const avgDealSize = totalWon > 0 ? totalDealValue / totalWon : 15000;
-    const avgSalesCycle = cycleCount > 0 ? totalCycleDays / cycleCount : 30;
-    console.log('Metrics calculated from Q1 and Q2');
+    const baseConversion = (wonCount + lostCount) > 0 ? wonCount / (wonCount + lostCount) : 0.5;
+    const baseDealSize = wonCount > 0 ? totalValue / wonCount : 15000;
+    const baseSalesCycle = cycleCount > 0 ? totalCycleDays / cycleCount : 30;
+    return { baseConversion, baseDealSize, baseSalesCycle };
+}
+app.get('/api/metrics', (req, res) => {
+    const { baseConversion, baseDealSize, baseSalesCycle } = getBaseMetrics();
     res.json({
-        conversionRate: conversionRate,
-        avgDealSize: avgDealSize,
-        avgSalesCycle: avgSalesCycle
+        conversionRate: baseConversion,
+        avgDealSize: baseDealSize,
+        avgSalesCycle: baseSalesCycle
     });
 });
-function calculateWeeklyRevenue(q3Deals, conversionRate, sizeMultiplier, cycleShift) {
-    const weeklyRevenue = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // 13 weeks
+function calculateWeeklyRevenue(q3Deals, conversionRate, sizeMultiplier, cycleShift, baseCycleDays) {
+    const weeklyRevenue = new Array(13).fill(0);
+    const q3Start = new Date('2025-07-01');
     for (let i = 0; i < q3Deals.length; i++) {
         const deal = q3Deals[i];
         const expectedValue = deal.deal_value * conversionRate * sizeMultiplier;
-        let weekIndex = 5;
-        if (cycleShift < -3)
-            weekIndex = 3;
-        if (cycleShift > 3)
-            weekIndex = 7;
+        const createdDate = new Date(deal.created_date);
+        const expectedCloseDate = new Date(createdDate);
+        expectedCloseDate.setDate(expectedCloseDate.getDate() + baseCycleDays + cycleShift);
+        const diffDays = Math.floor((expectedCloseDate.getTime() - q3Start.getTime()) / (1000 * 60 * 60 * 24));
+        let weekIndex = Math.floor(diffDays / 7);
         if (weekIndex < 0)
             weekIndex = 0;
         if (weekIndex > 12)
             weekIndex = 12;
-        weeklyRevenue[weekIndex] = weeklyRevenue[weekIndex] + expectedValue;
+        weeklyRevenue[weekIndex] += expectedValue;
     }
     let runningTotal = 0;
     const cumulativeWeekly = weeklyRevenue.map((value) => {
-        runningTotal = runningTotal + value;
+        runningTotal += value;
         return Math.round(runningTotal);
     });
     return {
@@ -115,40 +119,28 @@ app.post('/api/simulate', (req, res) => {
             q3PipelineDeals.push(allDeals[i]);
         }
     }
-    let wonCount = 0;
-    let lostCount = 0;
-    let totalValue = 0;
-    for (let i = 0; i < allDeals.length; i++) {
-        const d = allDeals[i];
-        if (isClosedInQ1OrQ2(d)) {
-            if (d.stage === 'Closed Won') {
-                wonCount = wonCount + 1;
-                totalValue = totalValue + d.deal_value;
-            }
-            else if (d.stage === 'Closed Lost') {
-                lostCount = lostCount + 1;
-            }
-        }
-    }
-    const baseConversion = wonCount + lostCount > 0 ? wonCount / (wonCount + lostCount) : 0.5;
-    const baseDealSize = wonCount > 0 ? totalValue / wonCount : 15000;
-    const baselineResult = calculateWeeklyRevenue(q3PipelineDeals, baseConversion, 1, 0);
+    const { baseConversion, baseDealSize, baseSalesCycle } = getBaseMetrics();
+    const baselineResult = calculateWeeklyRevenue(q3PipelineDeals, baseConversion, 1, 0, baseSalesCycle);
     const newConversion = baseConversion * (1 + conversionChange / 100);
     const newSizeMultiplier = 1 + dealSizeChange / 100;
-    const scenarioResult = calculateWeeklyRevenue(q3PipelineDeals, newConversion, newSizeMultiplier, salesCycleChange);
+    const scenarioResult = calculateWeeklyRevenue(q3PipelineDeals, newConversion, newSizeMultiplier, salesCycleChange, baseSalesCycle);
     const absoluteImpact = scenarioResult.total_revenue - baselineResult.total_revenue;
     const percentageImpact = baselineResult.total_revenue > 0
         ? Math.round((absoluteImpact / baselineResult.total_revenue) * 100 * 10) / 10
         : 0;
     const driversList = [];
-    if (conversionChange !== 0)
-        driversList.push(conversionChange > 0 ? 'Increase in conversion rate' : 'Decrease in conversion rate');
-    if (dealSizeChange !== 0)
-        driversList.push(dealSizeChange > 0 ? 'Increase in average deal size' : 'Decrease in average deal size');
-    if (salesCycleChange !== 0)
-        driversList.push('Change in sales cycle duration');
-    if (driversList.length === 0)
-        driversList.push('No changes applied');
+    if (conversionChange !== 0) {
+        driversList.push(conversionChange > 0 ? "Increase in conversion rate" : "Decrease in conversion rate");
+    }
+    if (dealSizeChange !== 0) {
+        driversList.push(dealSizeChange > 0 ? "Increase in average deal size" : "Decrease in average deal size");
+    }
+    if (salesCycleChange !== 0) {
+        driversList.push(salesCycleChange < 0 ? "Decrease in sales cycle" : "Increase in sales cycle");
+    }
+    if (driversList.length === 0) {
+        driversList.push("No changes applied");
+    }
     console.log('Simulation completed successfully');
     res.json({
         baseline: baselineResult,
