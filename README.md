@@ -42,10 +42,10 @@ You can tweak conversion rate, average deal size, and sales cycle duration — a
 
 ## API
 
-**GET /api/metrics**
+**GET -> /api/metrics**
 Returns baseline metrics
 
-**POST /api/simulate**
+**POST -> /api/simulate**
 
 json
 {
