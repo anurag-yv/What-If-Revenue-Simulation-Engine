@@ -111,8 +111,9 @@ README.md
 
 ## Run locally
 
-git clone https://github.com/anurag-yv/What-If-Revenue-Simulation-Engine.git
-cd What-If-Revenue-Simulation-Engine
+git clone https://github.com/anurag-yv/What-If-Revenue-Simulation-Engine.git                                                                           
+
+cd WHAT-IF REVENUE SIMULATION ENGINE
 
 **Backend**
 cd backend
