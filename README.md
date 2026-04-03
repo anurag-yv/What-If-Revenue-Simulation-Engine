@@ -63,7 +63,7 @@ Returns:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-## Frontend and ## Backend
+## Frontend and Backend
 
 Built with React + Chart.js + TypeScript
 
@@ -101,9 +101,13 @@ https://www.loom.com/share/c6e4b7c81c804455a217c61519e54d07
 ## Project Structure
 
 backend/
+
 frontend/
+
 screenshots/
+
 video/
+
 README.md
 
 
