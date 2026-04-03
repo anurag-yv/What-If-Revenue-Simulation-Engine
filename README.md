@@ -1,150 +1,159 @@
- What-If Revenue Simulation Engine
+What-If Revenue Simulation Engine
 
-A full-stack simulation tool that predicts Q3 revenue using historical sales data (Q1 & Q2) and allows “what-if” analysis on key levers like conversion rate, deal size, and sales cycle. Built as part of the SkyGeni Full Stack Internship Assignment.
+A full-stack tool to simulate **Q3 revenue** using Q1 & Q2 sales data, with real-time “what-if” controls for conversion rate, deal size, and sales cycle.
+Built for the SkyGeni Full Stack Internship Assignment.
 
-...............................................................................................................................................................
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#Overview
+## Overview
 
-This project helps answer:
+Instead of showing past dashboards, this project focuses on predicting future revenue.
 
-* What happens if conversion improves by 10%?
-* How does reducing sales cycle impact revenue?
-* What if average deal size increases?
+You can tweak conversion rate, average deal size, and sales cycle duration — and instantly see how revenue changes.
 
-Instead of dashboards, it simulates **future Q3 revenue** using real pipeline data.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-................................................................................................................................................................
+## How it works
 
-# How it works
+**Data split:**
 
-* **Q1 & Q2 (Jan–Jun 2025):** used to compute baseline metrics
-* **Q3 (Jul–Sep 2025):** open deals used for simulation
+* Q1 & Q2 → used to calculate baseline
+* Q3 → treated as open pipeline for simulation
 
-Baseline metrics:
+**Baseline metrics:**
 
-* Conversion Rate = Closed Won / (Closed Won + Closed Lost)
-* Avg Deal Size = avg(deal_value of Closed Won deals)
+* Conversion = Closed Won / (Closed Won + Closed Lost)
+* Avg Deal Size = avg(deal_value of Closed Won)
 * Sales Cycle = avg(closed_date − created_date)
 
-Fallbacks:
+**Fallbacks (if data missing):**
 
-* Conversion → 0.5 | Deal Size → 15000 | Sales Cycle → 30 days
+* conversion → 0.5
+* deal size → 15000
+* sales cycle → 30 days
 
-Simulation:
+**Simulation logic:**
 
-* Expected revenue → `deal_value × conversion_rate × size_multiplier`
-* Expected close → `created_date + base_sales_cycle + cycle_change`
-* Revenue is mapped into **13 weekly buckets** and shown as **cumulative revenue**
+* revenue = deal_value × conversion × size multiplier
+* close date = created_date + adjusted sales cycle
+* output mapped across 13 weekly buckets (cumulative)
 
-................................................................................................................................................................
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+## API
 
-#API
+**GET /api/metrics**
+Returns baseline metrics
 
-GET `/api/metrics` → baseline metrics
+**POST /api/simulate**
 
-POST `/api/simulate`
-
-```json
+json
 {
   "conversionChange": 10,
   "dealSizeChange": 15,
   "salesCycleChange": -5
 }
-```
-
-Returns baseline vs scenario revenue, impact (₹ & %), and drivers.
-
-................................................................................................................................................................
 
 
-#Frontend
+Returns:
 
-React + Chart.js UI with sliders:
+* baseline vs scenario revenue
+* total impact (₹ and %)
+* key drivers of change
 
-* Conversion: -30% → +30%
-* Deal Size: -30% → +30%
-* Sales Cycle: -15 → +15 days
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Behavior:
+## Frontend
 
-* Auto simulation (600ms debounce)
-* Manual run option
-* Real-time insights + last updated time
+Built with React + Chart.js
 
-................................................................................................................................................................
+* sliders for all 3 inputs
+* auto simulation (debounced)
+* manual run option
+* live updates + timestamp
 
-# Visualization
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-* Single line chart (as required)
-* Baseline vs Scenario
-* Weeks (W1–W13) vs Revenue (₹)
-* Cumulative trend
+## Visualization
 
-................................................................................................................................................................
+Single chart (as required):
 
-# Project Structure
+* baseline vs scenario
+* weekly → cumulative revenue
+* W1–W13 vs ₹
 
-```
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Demo
+
+https://www.loom.com/share/c6e4b7c81c804455a217c61519e54d07
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Screenshots
+
+![Controls](./screenshots/controls.png)
+![Chart](./screenshots/chart.png)
+![Insights](./screenshots/insights.png)
+![Full Preview](./screenshots/full-preview.png)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Project Structure
+
 backend/
-  server.ts
-  package.json
-  data/
-    deals.csv
-
 frontend/
-  App.tsx
-  package.json
-
+screenshots/
+video/
 README.md
-```
 
-................................................................................................................................................................
 
-# Run locally
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-```bash
+## Run locally
+
 git clone https://github.com/anurag-yv/What-If-Revenue-Simulation-Engine.git
 cd What-If-Revenue-Simulation-Engine
-```
 
-Backend:
-
-```bash
+**Backend**
 cd backend
 npm install
 npm run build
 npm start
-```
 
-Frontend:
 
-```bash
+**Frontend**
 cd frontend
 npm install
 npm run dev
-```
 
-................................................................................................................................................................
 
-# Assumptions & Inferences
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-* Only Q1–Q2 closed deals define baseline
-* Q3 deals are open pipeline (no closed_date)
-* Same conversion applies across deals
-* Sales cycle change is linear
-* Revenue is distributed weekly and shown cumulatively
+## Assumptions
 
-Insights:
+* Q1–Q2 define baseline
+* Q3 is open pipeline
+* uniform conversion applied
+* linear sales cycle adjustment
+* revenue shown cumulatively
 
-* Conversion rate has the strongest impact on revenue
-* Deal size increases scale revenue linearly
-* Shorter sales cycle shifts revenue earlier
-* Combined changes create compounding effects
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-................................................................................................................................................................
+## Key takeaways
 
-#Author
+* conversion has the biggest impact
+* deal size scales revenue directly
+* shorter cycle shifts revenue earlier
+* combined changes amplify results
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+##Author
 
 Anurag Yadav
+LinkedIn: https://www.linkedin.com/in/anurag-yv/
+GitHub: https://github.com/anurag-yv
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+⭐ If you found this useful, consider starring the repo.
