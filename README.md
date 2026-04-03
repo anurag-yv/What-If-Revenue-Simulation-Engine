@@ -63,9 +63,9 @@ Returns:
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-## Frontend
+## Frontend and ## Backend
 
-Built with React + Chart.js
+Built with React + Chart.js + TypeScript
 
 * sliders for all 3 inputs
 * auto simulation (debounced)
