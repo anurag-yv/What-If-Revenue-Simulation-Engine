@@ -115,22 +115,26 @@ git clone https://github.com/anurag-yv/What-If-Revenue-Simulation-Engine.git
 
 cd WHAT-IF REVENUE SIMULATION ENGINE
 
-
+....................
 
 **Backend**
 
-cd backend
-npm install
+cd backend 
+
+npm install                                                                                                                                                         
 npm run build
+
 npm start
 
 
-
+.....................
 
 **Frontend**
 
 cd frontend
+
 npm install
+
 npm run dev
 
 
